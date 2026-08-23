@@ -2,7 +2,7 @@
 ###############################################################################
 # reaper-updater.sh
 # https://github.com/void-patch/reaper-updater
-# 
+#
 # Fork of: https://github.com/inyourfoss/reaper-updater
 # Original author: inyourfoss
 # License: GPL-2.0 (inherited from upstream)
@@ -79,12 +79,16 @@ URL="https://www.reaper.fm"
 # in priority order: user-level first, then system-wide.
 # Per the official install-reaper.sh: '/opt' or '~/opt', with '~/opt'
 # preferred since it does not require root.
-DEFAULT_INSTALL_PATH="$HOME/opt"
-DETECTION_PATHS="$HOME/opt /opt"
+DEFAULT_INSTALL_PATH="$HOME/.local/opt"
+DETECTION_PATHS="$HOME/.local/opt $HOME/opt /opt"
 
 # XDG Base Directory compliant config location
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/reaper-updater"
 CONFIG_FILE="$CONFIG_DIR/config"
+
+#XDG Base Directory compliant cache location
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/reaper-updater"
+CACHE_FILE="$CACHE_DIR/version"
 
 # Step counter for status output
 STEP=0
@@ -226,6 +230,33 @@ check_install_path_writable() {
 }
 
 
+# --- Version checks ----------------------------------------------------------
+
+# Retrieve version from Download URL
+get_version_from_url() {
+    # Extract the version number from the download URL
+    version_index=$(expr "$dl_path" : ".*reaper\+")
+    expr substr $dl_path $((version_index + 1)) 3
+}
+
+# Retrieve version from cache file (Reaper does not have an API for this yet)
+get_version_from_cache() {
+    # Set CACHE_VERSION to version stored in version.cache
+    if [ -f "$CACHE_FILE" ]; then
+        head -n 1 "$CACHE_FILE"
+    else
+        echo 0
+    fi
+}
+
+# Update version in cache file
+write_version_to_cache() {
+    # Write version to version, creates missing subdirectories
+    mkdir -p "$CACHE_DIR"
+    echo "$dl_version" > "$CACHE_FILE"
+}
+
+
 # --- Core operations ---------------------------------------------------------
 
 # Scrapes the download page for the Linux x86_64 tarball link
@@ -273,11 +304,39 @@ reaper_unpack() {
 # (the installer is already non-interactive when --install is passed; --quiet
 #  just makes the output cleaner so it does not duplicate our step labels)
 reaper_install() {
-    if ! bash /tmp/reaper_linux_x86_64/install-reaper.sh \
+    if ! sh /tmp/reaper_linux_x86_64/install-reaper.sh \
             --install "$install_path" \
             --integrate-user-desktop \
             --quiet; then
         echo "Error: REAPER installer exited with non-zero status." >&2
+        exit 1
+    fi
+}
+
+reaper_install() {
+    if ! sh $install_path/REAPER/uninstall-reaper.sh \
+            --uninstall \
+            --delete-user-desktop \
+            --quiet; then
+        echo "Error: REAPER uninstaller exited with non-zero status." >&2
+        exit 1
+    fi
+}
+
+reaper_install_preserve_desktop_file() {
+    if ! sh /tmp/reaper_linux_x86_64/install-reaper.sh \
+            --install "$install_path" \
+            --quiet; then
+        echo "Error: REAPER installer exited with non-zero status." >&2
+        exit 1
+    fi
+}
+
+reaper_uninstall_preserve_desktop_file() {
+    if ! sh $install_path/REAPER/uninstall-reaper.sh \
+            --uninstall \
+            --quiet; then
+        echo "Error: REAPER uninstaller exited with non-zero status." >&2
         exit 1
     fi
 }
@@ -340,6 +399,10 @@ OPTIONS:
   --reconfigure
       Forget the saved install path and prompt again.
 
+  -d, --desktop-file
+      Preserves old desktop file
+      Useful if you have environment variables set in your desktop file
+
 EXAMPLES:
   ./reaper-updater.sh
   ./reaper-updater.sh --path /opt/audio
@@ -386,6 +449,10 @@ while [ $# -gt 0 ]; do
             reconfigure=0
             shift 1
         ;;
+        -d|--preserve-desktop-file)
+            preserve_desktop_file=0
+            shift 1
+        ;;
         *)
             echo "Unknown option: $1" >&2
             echo "See help: $0 --help" >&2
@@ -426,6 +493,17 @@ fi
 dl_link="$URL/$dl_path"
 echo "    -> $dl_link"
 
+dl_version=$(get_version_from_url)
+cache_version=$(get_version_from_cache)
+
+echo "    -> Latest version: $dl_version"
+echo "    -> Installed version: $cache_version"
+
+if [ $cache_version -ge $dl_version ]; then
+    echo "No updates available"
+    exit 0
+fi
+
 # Clean any leftovers from previous runs (silent, not a numbered step)
 reaper_remove
 
@@ -442,7 +520,14 @@ if [ -z "$download_only" ]; then
     check_install_path_writable
 
     step "Install to $install_path/REAPER"
-    reaper_install
+    if [ -z "$preserve_desktop_file" ]; then
+        reaper_uninstall
+        reaper_install
+    else
+        reaper_uninstall_preserve_desktop_file
+        reaper_install_preserve_desktop_file
+    fi
+    write_version_to_cache $dl_version
 fi
 
 if [ -n "$archive_path" ]; then
