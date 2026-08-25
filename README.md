@@ -129,6 +129,7 @@ From then on, the saved path is used silently.
 | `-p`, `--path <PATH>` | Use this path just for this run (doesn't change the saved config) |
 | `-a`, `--archive <PATH>` | Keep the downloaded file at `<PATH>` instead of deleting it. Without `<PATH>`, uses `~/Downloads`. |
 | `-g`, `--get-only` | Just download, don't install |
+| `-d`, `--preserve-desktop-file` | Does not replace your desktop file, useful if you have environment variables like `PIPEWIRE_LATENCY`, `PIPEWIRE_QUANTUM`, or `WINELOADER` set on reaper launch. |
 | `--reconfigure` | Forget the saved path and ask again |
 
 ## How REAPER gets detected
@@ -170,7 +171,7 @@ Roughly, in order:
 3. Download the tarball to `/tmp`
 4. Verify it's not corrupt
 5. Unpack it
-6. Run Cockos' official `install-reaper.sh` with your install path
+6. Run Cockos' official `uninstall-reaper.sh`, then `install-reaper.sh` with your install path
 7. Clean up `/tmp`
 
 The script does NOT touch your REAPER configuration (`~/.config/REAPER/`), your plugins, or anything outside the install path. Your settings and projects stay where they are.
