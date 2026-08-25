@@ -6,23 +6,16 @@ Close REAPER. Run the script. Open REAPER. New version. That's the whole workflo
 
 ## Background
 
-This is a fork of [inyourfoss/reaper-updater](https://github.com/inyourfoss/reaper-updater) (GPL-2.0). The original script does the actual work, scraping the download page and calling the official installer, and credit for that belongs to the upstream author.
-
-I forked it because I wanted to remove the last bit of friction from my update routine: notice a new REAPER release, run one command, done. No prompts, no paths to type, no clicking through dialogs.
-
-A heads-up: I'm not a shell script veteran. I had a clear idea of what I wanted to change, and I used Claude Code (via VS Code) to help with the actual refactoring and to cross-check things against the official Cockos installer code. The script is about 300 lines, half of which are comments, and the only URL it talks to is hardcoded as `reaper.fm`. Read it before running it.
+This is a fork of [void-patch/reaper-updater](https://github.com/inyourfoss/reaper-updater), which is in turn a fork of [inyourfoss/reaper-updater](https://github.com/inyourfoss/reaper-updater) (GPL-2.0). The original script does the vast majority of the work, and credit for that belongs to the upstream authors. Full disclosure, AI was used in void-patch's fork.
 
 ## What this fork changes
 
-- **Argument parsing works now.** In the original, options with values like `-p /some/path` weren't getting consumed properly. Fixed.
-- **Less noisy installer output.** The Cockos installer prints its own banner and an "install to X" line. Those collided with this script's step labels, so I pass `--quiet` to keep things tidy.
-- **REAPER gets found automatically.** The script checks the three standard install locations (`~/.local/opt`, `~/opt` and `/opt`). If REAPER is there, no questions asked. If it's elsewhere, you get asked once.
-  - **The path gets remembered.** Stored in `~/.config/reaper-updater/config`. You only ever see that prompt once.
-- **It checks things before doing damage.** Missing tools, corrupt download, no write permission, etc. get caught with a clear error before anything irreversible happens.
-- **Numbered step output.** `[1/7] Check dependencies`, etc. So you can tell where you are.
-- **One real bug fix.** In the original, combining `-a` (keep the downloaded file) with a normal install didn't work, because the file got moved out of `/tmp` before unpacking. The archiving step now happens at the end.
+- Version checking by extracting the version number from the download URL and writing it to a cache file upon successful installation. REAPER surprisingly does not have a `--version` command.
+- Ability to choose whether you want to overwrite your user `.desktop` file
+- Uninstalling the prior REAPER version before installing the new one. This does not delete your preferences, themes, or extensions like SWS, it just cleans up  potentially orphaned files.
+- Default install path has been changed to XDG style `~/.local/opt/REAPER` and has been added to the list of paths that are searched for a REAPER installation.
 
-The core logic (scrape the page, download, run the official installer) is unchanged from upstream.
+The core logic (scrape the page, download, run the official installer, check for dependencies, search for installation path) is unchanged from upstream.
 
 ## Features
 
