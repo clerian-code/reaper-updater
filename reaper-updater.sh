@@ -253,7 +253,7 @@ get_version_from_cache() {
 write_version_to_cache() {
     # Write version to version, creates missing subdirectories
     mkdir -p "$CACHE_DIR"
-    echo "$dl_version" > "$CACHE_FILE"
+    echo "$1" > "$CACHE_FILE"
 }
 
 
@@ -513,10 +513,13 @@ if [ -z "$download_only" ]; then
         install_args="$install_args --integrate-user-desktop"
         uninstall_args="$uninstall_args --remove-user-desktop"
     fi
-
+    # Clear version number from cache after successful uninstall
     reaper_uninstall
+    write_version_to_cache ""
+
+    # Write new version number to cache after successful install
     reaper_install
-    write_version_to_cache
+    write_version_to_cache $dl_version
 fi
 
 if [ -n "$archive_path" ]; then
