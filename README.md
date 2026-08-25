@@ -31,6 +31,8 @@ The core logic (scrape the page, download, run the official installer) is unchan
 - Optional flags to archive the downloaded file or only download
 - Clear step output and error messages
 - POSIX shell, tested with bash and dash
+- Detects version and only downloads and installs upon new version
+- Allows option to preserve a modified `.desktop` file
 
 ## Requirements
 
@@ -129,7 +131,7 @@ From then on, the saved path is used silently.
 | `-p`, `--path <PATH>` | Use this path just for this run (doesn't change the saved config) |
 | `-a`, `--archive <PATH>` | Keep the downloaded file at `<PATH>` instead of deleting it. Without `<PATH>`, uses `~/Downloads`. |
 | `-g`, `--get-only` | Just download, don't install |
-| `-d`, `--preserve-desktop-file` | Does not replace your desktop file, useful if you have environment variables like `PIPEWIRE_LATENCY`, `PIPEWIRE_QUANTUM`, or `WINELOADER` set on reaper launch. |
+| `-d`, `--preserve-desktop-file` | Does not replace your desktop file, useful if you have environment variables like `PIPEWIRE_LATENCY`, `PIPEWIRE_QUANTUM`, or `WINELOADER` set on REAPER launch. Behind the scenes, it runs `uninstall-reaper.sh` without `--remove-user-desktop` and `install-reaper.sh` without the `--integrate-user-desktop` flags. |
 | `--reconfigure` | Forget the saved path and ask again |
 
 ## How REAPER gets detected
@@ -143,6 +145,12 @@ When you run the script, it figures out where to install in this order:
 5. If none of the above worked, you get asked
 
 A directory counts as a REAPER install if it contains the binary at `<path>/REAPER/reaper`. That's the same thing the official installer checks for.
+
+## How REAPER version is checked
+
+Surprisingly, REAPER does not provide a command-line argument that returns a version number. Because the version number is available in the download URL, this script will write the version number to a file at `~/.cache/reaper-updater/version` each time it installs a version of REAPER. 
+
+If the cached version is greater than or equal to the online version, the script will terminate the update process and output that no updates are available.
 
 ## Configuration
 
