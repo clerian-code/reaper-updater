@@ -305,39 +305,22 @@ reaper_unpack() {
 #  just makes the output cleaner so it does not duplicate our step labels)
 reaper_install() {
     if ! sh /tmp/reaper_linux_x86_64/install-reaper.sh \
-            --install "$install_path" \
-            --integrate-user-desktop \
-            --quiet; then
+            $install_args; then
         echo "Error: REAPER installer exited with non-zero status." >&2
         exit 1
     fi
 }
 
 reaper_uninstall() {
-    if ! sh $install_path/REAPER/uninstall-reaper.sh \
-            --uninstall \
-            --delete-user-desktop \
-            --quiet; then
-        echo "Error: REAPER uninstaller exited with non-zero status." >&2
-        exit 1
-    fi
-}
-
-reaper_install_preserve_desktop_file() {
-    if ! sh /tmp/reaper_linux_x86_64/install-reaper.sh \
-            --install "$install_path" \
-            --quiet; then
-        echo "Error: REAPER installer exited with non-zero status." >&2
-        exit 1
-    fi
-}
-
-reaper_uninstall_preserve_desktop_file() {
-    if ! sh $install_path/REAPER/uninstall-reaper.sh \
-            --uninstall \
-            --quiet; then
-        echo "Error: REAPER uninstaller exited with non-zero status." >&2
-        exit 1
+    if [ -f $install_path/REAPER/uninstall-reaper.sh ]; then
+        echo "Uninstalling old version of REAPER"
+        if ! sh $install_path/REAPER/uninstall-reaper.sh \
+                $uninstall_args; then
+            echo "Error: REAPER uninstaller exited with non-zero status." >&2
+            exit 1
+        fi
+    else
+        echo "No uninstaller found, skipping uninstall"
     fi
 }
 
@@ -475,6 +458,10 @@ resolve_install_path
 # Strip trailing slash
 install_path="${install_path%/}"
 
+# Setup args for install and uninstall scripts
+install_args="--install $install_path --quiet"
+uninstall_args="--uninstall --quiet"
+
 # Pre-compute total steps for [N/M] output
 # Base: deps print, link, download, verify, cleanup = 5
 TOTAL_STEPS=5
@@ -520,14 +507,16 @@ if [ -z "$download_only" ]; then
     check_install_path_writable
 
     step "Install to $install_path/REAPER"
+
+    # if --preserve-desktop-file flag not present, add flags for deleting and re-adding user .desktop file
     if [ -z "$preserve_desktop_file" ]; then
-        reaper_uninstall
-        reaper_install
-    else
-        reaper_uninstall_preserve_desktop_file
-        reaper_install_preserve_desktop_file
+        install_args="$install_args --integrate-user-desktop"
+        uninstall_args="$uninstall_args --remove-user-desktop"
     fi
-    write_version_to_cache $dl_version
+
+    reaper_uninstall
+    reaper_install
+    write_version_to_cache
 fi
 
 if [ -n "$archive_path" ]; then
