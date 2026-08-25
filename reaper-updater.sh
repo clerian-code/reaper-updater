@@ -313,7 +313,7 @@ reaper_install() {
     fi
 }
 
-reaper_install() {
+reaper_uninstall() {
     if ! sh $install_path/REAPER/uninstall-reaper.sh \
             --uninstall \
             --delete-user-desktop \
