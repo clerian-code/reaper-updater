@@ -32,7 +32,7 @@ The core logic (scrape the page, download, run the official installer) is unchan
 - Clear step output and error messages
 - POSIX shell, tested with bash and dash
 - Detects version and only downloads and installs upon new version
-- Allows option to preserve a modified `.desktop` file
+- Allows option to preserve a modified or custom `.desktop` file
 
 ## Requirements
 
@@ -89,7 +89,7 @@ ln -s "$(pwd)/reaper-updater.sh" ~/.local/bin/reaper-update
 
 ## Usage
 
-If your REAPER is at one of the standard locations (`~/opt/REAPER` or `/opt/REAPER`), the script just runs:
+If your REAPER is at one of the standard locations (`~/.local/opt/REAPER`, `~/opt/REAPER` or `/opt/REAPER`), the script just runs:
 
 ```
 $ ./reaper-updater.sh
@@ -140,7 +140,7 @@ When you run the script, it figures out where to install in this order:
 
 1. Whatever you passed via `-p` (just for this run, not saved)
 2. If you passed `--reconfigure`, the saved config gets wiped and you're asked again
-3. The standard locations: `~/opt` first, then `/opt`
+3. The standard locations: `~/.local/opt` first, then `~/opt` second, then `/opt` last
 4. The saved config file at `~/.config/reaper-updater/config`
 5. If none of the above worked, you get asked
 
@@ -175,11 +175,11 @@ You can edit it by hand, delete it, or run the script with `--reconfigure` to st
 Roughly, in order:
 
 1. Fetch the REAPER download page
-2. Pull out the current Linux x86_64 download link from the HTML
+2. Pull out the current Linux x86_64 download link from the HTML and check versions
 3. Download the tarball to `/tmp`
 4. Verify it's not corrupt
 5. Unpack it
-6. Run Cockos' official `uninstall-reaper.sh`, then `install-reaper.sh` with your install path
+6. Run Cockos' official `uninstall-reaper.sh`, then `install-reaper.sh` with your install path and write version to cache
 7. Clean up `/tmp`
 
 The script does NOT touch your REAPER configuration (`~/.config/REAPER/`), your plugins, or anything outside the install path. Your settings and projects stay where they are.
