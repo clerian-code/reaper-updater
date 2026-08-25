@@ -16,7 +16,7 @@ A heads-up: I'm not a shell script veteran. I had a clear idea of what I wanted 
 
 - **Argument parsing works now.** In the original, options with values like `-p /some/path` weren't getting consumed properly. Fixed.
 - **Less noisy installer output.** The Cockos installer prints its own banner and an "install to X" line. Those collided with this script's step labels, so I pass `--quiet` to keep things tidy.
-- **REAPER gets found automatically.** The script checks the two standard install locations (`~/opt` and `/opt`). If REAPER is there, no questions asked. If it's elsewhere, you get asked once.
+- **REAPER gets found automatically.** The script checks the three standard install locations (`~/.local/opt`, `~/opt` and `/opt`). If REAPER is there, no questions asked. If it's elsewhere, you get asked once.
   - **The path gets remembered.** Stored in `~/.config/reaper-updater/config`. You only ever see that prompt once.
 - **It checks things before doing damage.** Missing tools, corrupt download, no write permission, etc. get caught with a clear error before anything irreversible happens.
 - **Numbered step output.** `[1/7] Check dependencies`, etc. So you can tell where you are.
